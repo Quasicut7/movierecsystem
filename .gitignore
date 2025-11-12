@@ -5,6 +5,9 @@
 data/
 *.csv
 
+# Screenshots
+screenshots/
+
 # Python
 __pycache__/
 *.py[cod]

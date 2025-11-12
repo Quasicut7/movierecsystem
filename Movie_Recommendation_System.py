@@ -61,34 +61,74 @@ def get_movie_details(title):
             }
     return None
 
-st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
+st.set_page_config(page_title="🎬 Movie Recommender", layout="wide", initial_sidebar_state="collapsed")
+
+st.markdown("""
+<style>
+    .main-title {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: bold;
+        background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+    .subtitle {
+        text-align: center;
+        font-size: 1.2rem;
+        color: #888;
+        margin-bottom: 2rem;
+    }
+    .movie-card {
+        background: #1E1E1E;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .stImage {
+        border-radius: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<h1 class="main-title">🎬 Movie Recommender</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Discover movies similar to your favorites using AI-powered recommendations</p>', unsafe_allow_html=True)
 
 recommender = MovieRecommender()
-st.title("Movie Recommender")
-st.write("Select a movie to get 5 similar movie recommendations based on genres and tags.")
 
-user_input = st.text_input("Enter a movie title:")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    user_input = st.text_input("🔍 Enter a movie title:", placeholder="e.g., Avengers, Inception, Toy Story...")
 movie_list = sorted(recommender.movies['title'].unique())
 
 matching_titles = recommender.movies[recommender.movies['title'].str.contains(user_input, case=False, na=False)]
 if not user_input:
     selected_movie = None
-    st.info("Please enter a correct movie title.")
+    with col2:
+        st.info("💡 Please enter a movie title to get started")
 elif matching_titles.empty:
     selected_movie = None
-    st.error("No matching movie found.")
+    with col2:
+        st.error("❌ No matching movie found. Try another title!")
 else:
     selected_movie = matching_titles.iloc[0]['title']
-    st.success(f"Match found: **{selected_movie}**")
+    with col2:
+        st.success(f"✅ Match found: **{selected_movie}**")
 
-if selected_movie and st.button("Recommend Movies"):
+with col2:
+    recommend_btn = st.button("🎯 Get Recommendations", use_container_width=True)
+
+if selected_movie and recommend_btn:
     with st.spinner('Finding similar movies...'):
         results = recommender.recommend(selected_movie)
 
     if results is None or results.empty:
         st.error("Movie not found.")
     else:
-        st.subheader(f"🎬 Movies similar to **{selected_movie}**:")
+        st.markdown(f"<h2 style='text-align: center; color: #4ECDC4; margin-top: 2rem;'>🎬 Movies Similar to {selected_movie}</h2>", unsafe_allow_html=True)
+        st.markdown("---")
         
         valid_movies = []
         for _, row in results.iterrows():
@@ -100,18 +140,21 @@ if selected_movie and st.button("Recommend Movies"):
             if len(valid_movies) == 5:
                 break
         
-        for row, details in valid_movies:
-            col1, col2 = st.columns([1, 3])
-            with col1:
-                if details['poster'] != 'N/A':
-                    st.image(details['poster'], width=150)
-            with col2:
-                st.markdown(f"### {row['title']}")
-                st.markdown(f"**Year:** {details['year']} | **Rated:** {details['rated']} | **Runtime:** {details['runtime']}")
-                st.markdown(f"⭐ **IMDb:** {details['imdbRating']}/10 | **Metascore:** {details['metascore']}/100")
-                st.markdown(f"**Director:** {details['director']}")
-                st.markdown(f"**Actors:** {details['actors']}")
-                st.markdown(f"**Plot:** {details['plot']}")
-                st.markdown(f"**Genre:** {details['genre']}")
-                st.markdown(f"**Language:** {details['language']} | **Country:** {details['country']}")
-            st.markdown("---")
+        for idx, (row, details) in enumerate(valid_movies, 1):
+            with st.container():
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    if details['poster'] != 'N/A':
+                        st.image(details['poster'], use_column_width=True)
+                    else:
+                        st.markdown("<div style='background: #333; height: 300px; border-radius: 10px; display: flex; align-items: center; justify-content: center;'>🎬</div>", unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f"<h3 style='color: #FF6B6B;'>{idx}. {row['title']}</h3>", unsafe_allow_html=True)
+                    st.markdown(f"📅 **{details['year']}** | 🎫 **{details['rated']}** | ⏱️ **{details['runtime']}**")
+                    st.markdown(f"⭐ **IMDb:** {details['imdbRating']}/10 | 📊 **Metascore:** {details['metascore']}/100")
+                    st.markdown(f"🎬 **Director:** {details['director']}")
+                    st.markdown(f"🎭 **Cast:** {details['actors']}")
+                    st.markdown(f"📖 **Plot:** *{details['plot']}*")
+                    st.markdown(f"🎪 **Genre:** {details['genre']}")
+                    st.markdown(f"🌍 **Language:** {details['language']} | 🗺️ **Country:** {details['country']}")
+                st.markdown("<hr style='margin: 2rem 0; border: 1px solid #333;'>", unsafe_allow_html=True)
