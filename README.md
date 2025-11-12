@@ -98,8 +98,11 @@ movie-recommender/
 ![Homepage](./screenshots/homepage.png)
 
 ### 🔹 Recommendations
-![Recommendations](./screenshots/recommendations_1.png)
-![](./screenshots/recommendations_2.png)
+![Recommendations](./screenshots/recommendations.png)
+
+### 🔹 Data Analysis
+![EDA Homepage](./screenshots/eda_homepage.png)
+![Analysis Plots](./screenshots/plots.png)
 
 ---
 
