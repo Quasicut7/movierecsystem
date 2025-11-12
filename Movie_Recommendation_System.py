@@ -67,28 +67,28 @@ st.markdown("""
 <style>
     .main-title {
         text-align: center;
-        font-size: 3.5rem;
+        font-size: 4rem;
         font-weight: bold;
         background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 2rem 0;
     }
     .subtitle {
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         color: #888;
-        margin-bottom: 2rem;
+        margin-bottom: 3rem;
     }
-    .movie-card {
-        background: #1E1E1E;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    .stTextInput > div > div > input {
+        font-size: 1.2rem;
+        padding: 1rem;
     }
-    .stImage {
-        border-radius: 10px;
+    .stButton > button {
+        font-size: 1.3rem;
+        padding: 0.8rem 2rem;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -98,9 +98,10 @@ st.markdown('<p class="subtitle">Discover movies similar to your favorites using
 
 recommender = MovieRecommender()
 
-col1, col2, col3 = st.columns([1, 2, 1])
+st.markdown("<br>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    user_input = st.text_input("🔍 Enter a movie title:", placeholder="e.g., Avengers, Inception, Toy Story...")
+    user_input = st.text_input("🔍 Enter a movie title:", placeholder="e.g., Avengers, Inception, Toy Story...", label_visibility="visible")
 movie_list = sorted(recommender.movies['title'].unique())
 
 matching_titles = recommender.movies[recommender.movies['title'].str.contains(user_input, case=False, na=False)]
@@ -131,21 +132,32 @@ if selected_movie and recommend_btn:
         st.markdown("---")
         
         valid_movies = []
-        for _, row in results.iterrows():
+        for idx, row in results.iterrows():
             if row['title'] == selected_movie:
                 continue
             details = get_movie_details(row['title'])
             if details:
-                valid_movies.append((row, details))
-            if len(valid_movies) == 5:
+                valid_movies.append((row, details, idx))
+            if len(valid_movies) == 15:
                 break
+        
+        # Calculate combined score: similarity (position) + rating
+        for i, (row, details, original_idx) in enumerate(valid_movies):
+            similarity_score = (15 - i) / 15  # Higher for more similar
+            rating_score = float(details['imdbRating']) / 10 if details['imdbRating'] != 'N/A' else 0
+            combined_score = (similarity_score + rating_score) / 2
+            valid_movies[i] = (row, details, combined_score)
+        
+        # Sort by combined score
+        valid_movies.sort(key=lambda x: x[2], reverse=True)
+        valid_movies = [(row, details) for row, details, _ in valid_movies[:5]]
         
         for idx, (row, details) in enumerate(valid_movies, 1):
             with st.container():
                 col1, col2 = st.columns([1, 3])
                 with col1:
                     if details['poster'] != 'N/A':
-                        st.image(details['poster'], use_column_width=True)
+                        st.image(details['poster'], use_container_width=True)
                     else:
                         st.markdown("<div style='background: #333; height: 300px; border-radius: 10px; display: flex; align-items: center; justify-content: center;'>🎬</div>", unsafe_allow_html=True)
                 with col2:
