@@ -1,35 +1,65 @@
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.neighbors import NearestNeighbors
 import streamlit as st
+import requests
+import os
+import pandas as pd
+from dotenv import load_dotenv
+from recommender import MovieRecommender
 
-class MovieRecommender:
-    def __init__(self, movies_path='.//data//movies.csv', tags_path='.//data//tags.csv'):
-        self.movies = pd.read_csv(movies_path)
-        self.tags = pd.read_csv(tags_path)
-        self._prepare_data()
+load_dotenv()
+OMDB_API_KEY = os.getenv('OMDB_API_KEY')
 
-    def _prepare_data(self):
-        tag_df = self.tags.groupby('movieId')['tag'].apply(lambda x: ' '.join(x)).reset_index()
-        self.movies = pd.merge(self.movies, tag_df, on='movieId', how='left')
-        self.movies['tag'] = self.movies['tag'].fillna(' ')
-        self.movies['genres'] = self.movies['genres'].str.replace('|', ' ')
-        self.movies['combined'] = self.movies['genres'] + ' ' + self.movies['tag']
-
-        vectorizer = TfidfVectorizer(stop_words='english')
-        self.tfidf_matrix = vectorizer.fit_transform(self.movies['combined'])
-
-        self.knn = NearestNeighbors(metric='cosine', algorithm='brute')
-        self.knn.fit(self.tfidf_matrix)
-
-    def recommend(self, title, k=5):
-        if title not in self.movies['title'].values:
-            return pd.DataFrame()
-        idx = self.movies[self.movies['title'] == title].index[0]
-        vec = self.tfidf_matrix[idx]
-        _, indices = self.knn.kneighbors(vec, n_neighbors=k+1)
-        indices = indices.flatten()[1:]
-        return self.movies.iloc[indices][['title', 'genres', 'tag']]
+def get_movie_details(title):
+    if not OMDB_API_KEY or OMDB_API_KEY == 'your_api_key_here':
+        return None
+    
+    import re
+    year_match = re.search(r'\((\d{4})\)', title)
+    clean_title = re.sub(r'\s*\(\d{4}\)', '', title).strip()
+    year = year_match.group(1) if year_match else None
+    
+    # Try with year
+    if year:
+        url = f"http://www.omdbapi.com/?t={clean_title}&y={year}&apikey={OMDB_API_KEY}"
+        response = requests.get(url, timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('Response') == 'True':
+                return {
+                    'poster': data.get('Poster', 'N/A'),
+                    'year': data.get('Year', 'N/A'),
+                    'rated': data.get('Rated', 'N/A'),
+                    'runtime': data.get('Runtime', 'N/A'),
+                    'director': data.get('Director', 'N/A'),
+                    'actors': data.get('Actors', 'N/A'),
+                    'plot': data.get('Plot', 'N/A'),
+                    'imdbRating': data.get('imdbRating', 'N/A'),
+                    'metascore': data.get('Metascore', 'N/A'),
+                    'genre': data.get('Genre', 'N/A'),
+                    'language': data.get('Language', 'N/A'),
+                    'country': data.get('Country', 'N/A')
+                }
+    
+    # Fallback: try without year
+    url = f"http://www.omdbapi.com/?t={clean_title}&apikey={OMDB_API_KEY}"
+    response = requests.get(url, timeout=3)
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('Response') == 'True':
+            return {
+                'poster': data.get('Poster', 'N/A'),
+                'year': data.get('Year', 'N/A'),
+                'rated': data.get('Rated', 'N/A'),
+                'runtime': data.get('Runtime', 'N/A'),
+                'director': data.get('Director', 'N/A'),
+                'actors': data.get('Actors', 'N/A'),
+                'plot': data.get('Plot', 'N/A'),
+                'imdbRating': data.get('imdbRating', 'N/A'),
+                'metascore': data.get('Metascore', 'N/A'),
+                'genre': data.get('Genre', 'N/A'),
+                'language': data.get('Language', 'N/A'),
+                'country': data.get('Country', 'N/A')
+            }
+    return None
 
 st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
 
@@ -52,14 +82,36 @@ else:
     st.success(f"Match found: **{selected_movie}**")
 
 if selected_movie and st.button("Recommend Movies"):
-    results = recommender.recommend(selected_movie)
+    with st.spinner('Finding similar movies...'):
+        results = recommender.recommend(selected_movie)
 
     if results is None or results.empty:
         st.error("Movie not found.")
     else:
         st.subheader(f"🎬 Movies similar to **{selected_movie}**:")
+        
+        valid_movies = []
         for _, row in results.iterrows():
-            st.markdown(f"**Title:** {row['title']}")
-            st.markdown(f"**Genres:** {row['genres']}")
-            st.markdown(f"**Tags:** {row['tag'] if row['tag'] else 'N/A'}")
+            if row['title'] == selected_movie:
+                continue
+            details = get_movie_details(row['title'])
+            if details:
+                valid_movies.append((row, details))
+            if len(valid_movies) == 5:
+                break
+        
+        for row, details in valid_movies:
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                if details['poster'] != 'N/A':
+                    st.image(details['poster'], width=150)
+            with col2:
+                st.markdown(f"### {row['title']}")
+                st.markdown(f"**Year:** {details['year']} | **Rated:** {details['rated']} | **Runtime:** {details['runtime']}")
+                st.markdown(f"⭐ **IMDb:** {details['imdbRating']}/10 | **Metascore:** {details['metascore']}/100")
+                st.markdown(f"**Director:** {details['director']}")
+                st.markdown(f"**Actors:** {details['actors']}")
+                st.markdown(f"**Plot:** {details['plot']}")
+                st.markdown(f"**Genre:** {details['genre']}")
+                st.markdown(f"**Language:** {details['language']} | **Country:** {details['country']}")
             st.markdown("---")
