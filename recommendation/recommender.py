@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
 class MovieRecommender:
-    def __init__(self, movies_path='.//data//movies.csv', tags_path='.//data//tags.csv'):
+    def __init__(self, movies_path='./data/movies.csv', tags_path='./data/tags.csv'):
         self.movies = pd.read_csv(movies_path)
         self.tags = pd.read_csv(tags_path)
         self._prepare_data()

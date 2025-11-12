@@ -12,6 +12,7 @@ A **Content-Based Movie Recommender** built using the **MovieLens dataset**, **T
 - 🎬 Displays movie posters, ratings, plot, cast, and more via OMDb API
 - 💡 Simple and fast UI with Streamlit
 - 📊 Shows IMDb ratings, Metascore, director, actors, language, and country
+- 📈 Comprehensive EDA with visualizations
 
 ---
 
@@ -50,7 +51,11 @@ pip install -r requirements.txt
 ## 🚀 Run the App
 
 ```bash
-streamlit run Movie_Recommendation_System.py
+# Generate analysis plots (first time only)
+python analysis/generate_plots.py
+
+# Run the main application
+streamlit run main.py
 ```
 
 The app will open in your browser at `http://localhost:8501`
@@ -64,9 +69,23 @@ movie-recommender/
 ├── data/
 │   ├── movies.csv          # Movie titles and genres
 │   └── tags.csv            # User-submitted tags
-├── recommender.py          # MovieRecommender class
-├── Movie_Recommendation_System.py  # Streamlit UI
+├── recommendation/
+│   ├── __init__.py
+│   ├── recommender.py      # MovieRecommender class
+│   └── recommendation_ui.py # Recommendation UI module
+├── analysis/
+│   ├── __init__.py
+│   ├── analysis_ui.py      # Analysis UI module
+│   ├── generate_plots.py   # Plot generation script
+│   ├── eda_analysis.ipynb  # Jupyter notebook for EDA
+│   └── plots/              # Generated visualizations
+├── screenshots/
+│   ├── homepage.png
+│   ├── recommendations_1.png
+│   └── recommendations_2.png
+├── main.py                 # Main application entry point
 ├── .env                    # OMDb API key (create this)
+├── .gitignore
 ├── requirements.txt        # Dependencies
 └── README.md
 ```
@@ -92,3 +111,6 @@ movie-recommender/
 - **pandas** - Data manipulation
 - **OMDb API** - Movie metadata and posters
 - **python-dotenv** - Environment variable management
+- **matplotlib** - Data visualization
+- **seaborn** - Statistical visualizations
+- **wordcloud** - Tag cloud generation

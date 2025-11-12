@@ -1,28 +1,27 @@
-# Environment variables
 .env
 
-# Data files
 data/
 *.csv
 
-# Python
+analysis/plots/*.png
+
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 
-# Virtual environments
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
 venv/
 env/
 ENV/
 
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
 .DS_Store
 Thumbs.db
