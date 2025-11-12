@@ -1,6 +1,10 @@
 # Environment variables
 .env
 
+# Data files
+data/
+*.csv
+
 # Python
 __pycache__/
 *.py[cod]
